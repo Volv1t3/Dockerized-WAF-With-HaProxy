@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: modsecurity
+  namespace: networking-engineering-dockerized-nvf-project
+spec:
+  selector:
+    container.level.application.association: "agricommerce-modsecurity"
+    container.level.application.revision: "Rev-1.0.0-component-alpha"
+  ports:
+    - name: internal-port
+      port: 8080
+      targetPort: 8080 
+      protocol: TCP

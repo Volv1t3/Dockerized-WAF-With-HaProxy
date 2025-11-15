@@ -1,0 +1,88 @@
+#!------------------------------------
+#? Configuracion de los ConfigMaps del ModSecurity base
+#? Santiago Arellano 00328370
+#? Estas configuraciones adicionales definen los ConfigMpas
+#? usados para cargar la informacion de los documentos requeridos 
+#? por ModSecurity
+#! -----------------------------------
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    # Infrastructure information
+    infrastructure.deployment.config.type: "base-config"
+    infrastructure.deployment.config.name: "base-config-dockerized-nfvs"
+    infrastructure.deployment.config.author: "Santiago Arellano"
+    infrastructure.deployment.config.revision: "Rev-1.0.0:alpha"
+    # Configuration Information
+    application.deployment.config.type: "default-behavior-config"
+    application.deployment.config.name: "agricommerce-base-behavior-config"
+    application.deployment.config.author: "Santiago Arellano"
+    application.deployment.config.revision: "Rev-1.0.0:alpha"
+  name: modsecurity-configmap-modsecurity-conf
+  namespace: networking-engineering-dockerized-nvf-project
+data:
+  modsecurity.conf: |
+    # ===========================
+    # Basic ModSecurity Configuration
+    # ===========================
+
+    # Enable ModSecurity engine
+    SecRuleEngine On
+
+    # Enable the ModSecurity status engine
+    SecStatusEngine On
+
+    # Audit logging (detailed logs of blocked requests)
+    SecAuditEngine On
+    SecAuditLog /var/log/apache2/modsec_audit.log
+    SecAuditLogFormat JSON
+    SecAuditLogType Serial
+
+    # --- Enable full body access ---
+    SecRequestBodyAccess On
+
+    # --- Set limits (safe defaults) ---
+    SecRequestBodyLimit 13107200
+    SecRequestBodyInMemoryLimit 131072
+    SecRequestBodyLimitAction ProcessPartial
+    SecRequestBodyNoFilesLimit 131072
+    SecRequestBodyJsonDepthLimit 512
+
+    # Phase collections & data dir
+    SecDataDir /tmp
+    SecTmpDir /tmp
+
+    # Default action: log and deny on matched rules
+    # (If using CRS anomaly scoring, CRS itself handles denial)
+    # Default action: log and deny on matched rules
+    SecDefaultAction "phase:1,log,auditlog,pass"
+    SecDefaultAction "phase:2,log,auditlog,pass"
+
+
+    # Request body access (needed for POST inspection)
+    SecRequestBodyAccess On
+    SecRequestBodyLimit 13107200
+    SecRequestBodyLimitAction ProcessPartial
+    SecRequestBodyInMemoryLimit 131072
+
+    # Response body access (optional but useful)
+    SecResponseBodyAccess On
+    SecResponseBodyMimeType text/plain text/html text/xml application/json
+    SecResponseBodyLimit 524288
+    SecResponseBodyLimitAction ProcessPartial
+
+    # Debug log (set to high for troubleshooting)
+    SecDebugLog /var/log/apache2/modsec_debug.log
+    SecDebugLogLevel 0
+
+
+
+    # ===========================
+    # Include the OWASP Core Rule Set
+    # ===========================
+    Include /etc/modsecurity.d/crs-setup.conf
+    Include /usr/local/apache2/conf/manualSQLiTuning.conf
+    Include /etc/modsecurity.d/rules/*.conf
+

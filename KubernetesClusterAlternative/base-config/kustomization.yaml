@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: networking-engineering-dockerized-nvf-project
+
+resources:
+- infra-base-namespace.yaml
+- haproxy-secret.yaml
+- infra-base-backend-vol.yaml
+- infra-base-be-clusterip.yaml
+- infra-base-be-deploy.yaml
+- infra-base-fe-clusterip.yaml
+- infra-base-fe-deploy.yaml
+- infra-base-haproxy-nodeport.yaml
+- infra-base-haproxy-deploy.yaml
+- infra-base-httpd-conf-confmap.yaml
+- infra-base-modsec-clusterip.yaml
+- infra-base-modsec-conf-confmap.yaml
+- infra-base-modsec-crs-setup-confmap.yaml
+- infra-base-modsec-customrules-confmap.yaml
+- infra-base-modsec-deploy.yaml
+- infra-base-modsec-manualTuning-confmap.yaml
+- infra-base-modsec-proxy-conf.confmap.yaml
+- infra-base-modsec-vol.yaml

@@ -1,0 +1,21 @@
+#!------------------------------------
+#? Configuracion base de un PersistentVolumeClaim para la data de la db
+#? Santiago Arellano 00328370
+#? Esta configuracion es base para el uso de volumenes en Kubernetes. Podemos
+#? usar como antes un emptyDir{} pero este sigue el ciclo del pod y no necesito
+#? que se muera cuando muere el pod, sino que siga vivo hasta que se elimine 
+#? manualmente. Por lo que uso e sun local-storage con afinidad al cluster creado 
+#? para el proyecto!
+#! -----------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: persistent-claim-for-db-primsa-vol
+  namespace: networking-engineering-dockerized-nvf-project
+spec:
+  resources:
+    requests:
+      storage: "5Gi"
+  storageClassName: local-storage
+  accessModes:
+    - ReadWriteOnce

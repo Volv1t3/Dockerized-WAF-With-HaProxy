@@ -1,0 +1,56 @@
+#!------------------------------------
+#? Configuracion Base del Frontend Deployment
+#? Santiago Arellano
+#? La configuracion de este documento involucra la
+#? creacion y definicion de un deployment con un 
+#? solo pod para el frontend de la aplicacion
+#! -----------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    # Infrastructure information
+    infrastructure.deployment.config.type: "base-config"
+    infrastructure.deployment.config.name: "base-config-dockerized-nfvs"
+    infrastructure.deployment.config.author: "Santiago Arellano"
+    infrastructure.deployment.config.revision: "Rev-1.0.0:alpha"
+    # Configuration Information
+    application.deployment.config.type: "default-behavior-config"
+    application.deployment.config.name: "agricommerce-base-behavior-config"
+    application.deployment.config.author: "Santiago Arellano"
+    application.deployment.config.revision: "Rev-1.0.0:alpha"
+  name: frontend
+  namespace: networking-engineering-dockerized-nvf-project
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      container.level.application.association: "agricommerce-frontend"
+      container.level.application.revision: "Rev-1.0.0-component-alpha"
+  template:
+    metadata:
+      labels:
+        container.level.application.association: "agricommerce-frontend"
+        container.level.application.revision: "Rev-1.0.0-component-alpha"
+    spec:
+      containers:
+      #? 1. Definimos el conteneod del frontend, le envio las mismas 
+      #? variables de entorno por el momento
+      - name: frontend 
+        image: arellanosantiago/dockerizednfvs:test-frontend-1.0.0
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 34771
+            name: puerto-frontend
+            protocol: TCP
+            hostPort: 34771
+        resources:
+          requests:
+            cpu: "300m"
+            memory: "1Gi"
+          limits:
+            cpu: "500m"
+            memory: "2Gi"
+        env:
+          - name: BACKEND_URL
+            value: http://backend:33771

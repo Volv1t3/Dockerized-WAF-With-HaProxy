@@ -1,0 +1,56 @@
+#!------------------------------------
+#? Configuracion de los ConfigMaps del ModSecurity base
+#? Santiago Arellano 00328370
+#? Estas configuraciones adicionales definen los ConfigMpas
+#? usados para cargar la informacion de los documentos requeridos 
+#? por ModSecurity
+#! -----------------------------------
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    # Infrastructure information
+    infrastructure.deployment.config.type: "base-config"
+    infrastructure.deployment.config.name: "base-config-dockerized-nfvs"
+    infrastructure.deployment.config.author: "Santiago Arellano"
+    infrastructure.deployment.config.revision: "Rev-1.0.0:alpha"
+    # Configuration Information
+    application.deployment.config.type: "default-behavior-config"
+    application.deployment.config.name: "agricommerce-base-behavior-config"
+    application.deployment.config.author: "Santiago Arellano"
+    application.deployment.config.revision: "Rev-1.0.0:alpha"
+  name:  modsecurity-configmap-rules
+  namespace: networking-engineering-dockerized-nvf-project
+data:
+  custom.conf: |
+    # This file is for custom rules.
+    # Detect SQL Injection using libinjection in JSON request bodies
+    SecRule REQUEST_HEADERS:Content-Type "@contains application/json" \
+      "id:999001,\
+      phase:2,\
+      t:none,t:lowercase,\
+      log,auditlog,deny,\
+      msg:'SQL Injection Attack in JSON body (libinjection)',\
+      chain"
+
+      SecRule REQUEST_BODY "@detectSQLi" "t:none"
+
+    # Detect SQLi-like patterns in JSON body for the vulnerable endpoint
+    SecRule REQUEST_URI "@beginsWith /api/vulnerable/performUserRequest" \
+        "id:100010,\
+        phase:2,\
+        t:none,t:lowercase,t:urlDecodeUni,\
+        pass,\
+        log,\
+        msg:'JSON SQLi-like pattern in command field for vulnerable endpoint',\
+        setvar:'tx.anomaly_score_pl1=+5',\
+        setvar:'tx.sql_json_detected=1',\
+        chain"
+
+        SecRule REQUEST_HEADERS:Content-Type "@contains application/json" \
+            "t:none,t:lowercase,\
+            chain"
+
+            SecRule REQUEST_BODY:command "@rx (\bselect\b|\bunion\b|\bor\b\s+1\s*=\s*1\b|\bdrop\s+table\b)" \
+                "t:none,t:lowercase,t:urlDecodeUni"

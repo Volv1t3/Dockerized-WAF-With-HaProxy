@@ -1,0 +1,36 @@
+#!------------------------------------
+#? Configuracion base del ClusterIP para la aplicacion
+#? Santiago Arellano 00328370
+#? En este caso estamos configurando un ClusterIP para abrir una 
+#? IP de manejo en el cluster. Esto debido a que diferentes nodos
+#? en diferentes deployments tienen que hablar con el backend. 
+#? Especificamente ModSecurity, HaPRoxy y el Frontend tienen que hablar
+#? con el backend para determinar respuestas y bloqueos, por lo que
+#? abrimos esta IP estable en el cluster para su manejo 
+#! -----------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    # Infrastructure information
+    infrastructure.deployment.config.type: "base-config"
+    infrastructure.deployment.config.name: "base-config-dockerized-nfvs"
+    infrastructure.deployment.config.author: "Santiago Arellano"
+    infrastructure.deployment.config.revision: "Rev-1.0.0-alpha"
+    # Configuration Information
+    application.deployment.config.type: "default-behavior-config"
+    application.deployment.config.name: "agricommerce-base-behavior-config"
+    application.deployment.config.author: "Santiago Arellano"
+    application.deployment.config.revision: "Rev-1.0.0-alpha"
+  name: backend
+  namespace: networking-engineering-dockerized-nvf-project
+spec:
+  selector:
+    container.level.application.association: "agricommerce-backend"
+    container.level.application.revision: "Rev-1.0.0-component-alpha"
+  ports:
+    - name: http-for-backend
+      port: 33771
+      targetPort: 33771
+      protocol: TCP
+  type: ClusterIP

@@ -1,0 +1,112 @@
+#!------------------------------------
+#? Configuracion de un Deployment para el ModSecurity WAF
+#? Santiago Arellano 00328370
+#? Este archivo define al configuracion base del querido ModSecurity
+#? para su utilizacion en base al sistema interno de la aplicacion. Este
+#? deployment hace uso de los componentes deifnidos en la carpeta /configs
+#? que define las configuraciones adicionales definidas para este proceso
+#! -----------------------------------
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    # Infrastructure information
+    infrastructure.deployment.config.type: "base-config"
+    infrastructure.deployment.config.name: "base-config-dockerized-nfvs"
+    infrastructure.deployment.config.author: "Santiago Arellano"
+    infrastructure.deployment.config.revision: "Rev-1.0.0-alpha"
+    # Configuration Information
+    application.deployment.config.type: "default-behavior-config"
+    application.deployment.config.name: "agricommerce-base-behavior-config"
+    application.deployment.config.author: "Santiago Arellano"
+    application.deployment.config.revision: "Rev-1.0.0-alpha"
+  name: modsecurity
+  namespace: networking-engineering-dockerized-nvf-project
+spec:
+  serviceName: modsecurity
+  replicas: 1
+  selector:
+    matchLabels:
+      container.level.application.association: "agricommerce-modsecurity"
+      container.level.application.revision: "Rev-1.0.0-component-alpha"
+  template:
+    metadata:
+      labels:
+        container.level.application.association: "agricommerce-modsecurity"
+        container.level.application.revision: "Rev-1.0.0-component-alpha"
+    spec:
+      containers:
+        - name: modsecurity
+          image: owasp/modsecurity-crs:apache
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            - name: MODSEC_STATUS_ENGINE
+              value: "On"
+            - name: MODSEC_RULE_ENGINE
+              value: "On"
+            - name: PARANOIA_LEVEL
+              value: "4"
+            - name: BACKEND
+              value: "http://backend:33771"
+            - name: PORT
+              value: "8080"
+          volumeMounts:
+            - name: modsecurity-conf
+              mountPath: /etc/modsecurity.d/modsecurity.conf
+              subPath: modsecurity.conf
+            - name: modsecurity-crs-setup
+              mountPath: /etc/modsecurity.d/crs-setup.conf
+              subPath: crs-setup.conf
+            - name: modsecurity-httpd-conf
+              mountPath: /usr/local/apache2/conf/httpd.conf
+              subPath: httpd.conf
+            - name: modsecurity-proxy-conf
+              mountPath: /usr/local/apache2/conf/extra/httpd-vhosts.conf
+              subPath: proxy.conf
+            - name: modsecurity-manual-sqli-tuning
+              mountPath: /usr/local/apache2/conf/manualSQLiTuning.conf
+              subPath: manualSQLiTuning.conf
+              readOnly: true
+            - name: modsecurity-rules
+              mountPath: /etc/modsecurity.d/rules
+            - name: modsecurity-logs
+              mountPath: /var/log/apache2
+          resources:
+            requests:
+              cpu: "300m"
+              memory: "2Gi"
+            limits:
+              cpu: "500m"
+              memory: "3Gi"
+      volumes:
+        - name: modsecurity-conf
+          configMap:
+            name: modsecurity-configmap-modsecurity-conf
+        - name: modsecurity-crs-setup
+          configMap:
+            name: modsecurity-configmap-crs-setup
+        - name: modsecurity-httpd-conf
+          configMap:
+            name: modsecurity-configmap-httpd-conf
+        - name: modsecurity-proxy-conf
+          configMap:
+            name: modsecurity-configmap-proxy-conf
+        - name: modsecurity-manual-sqli-tuning
+          configMap:
+            name: modsecurity-configmap-manual-sqli-tuning
+        - name: modsecurity-rules
+          configMap:
+            name: modsecurity-configmap-rules
+  volumeClaimTemplates:
+    - metadata:
+        name: modsecurity-logs
+      spec:
+        accessModes: 
+          - ReadWriteOnce
+        # storageClassName: ss-local-storage
+        resources:
+          requests:
+            storage: "10Gi"

@@ -1,0 +1,82 @@
+#!------------------------------------
+#? Configuracion base del backend con un Deployment por su cuenta
+#? Santiago Arellano 00328370
+#? Esta configuracion adicional es necesaria dado que tenemos que 
+#? manejar la inicializacion de la data de la DB en el contenedor
+#? y esto no se puede desde el contenedor normal porque el volume mount
+#? luego quita los datos y los sobreescribe lo que no es bueno, por tanto 
+#? usamos un init container para cargar la data y luego juntar el volumen
+#? existente
+#! -----------------------------------
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    # Infrastructure information
+    infrastructure.deployment.config.type: "base-config"
+    infrastructure.deployment.config.name: "base-config-dockerized-nfvs"
+    infrastructure.deployment.config.author: "Santiago Arellano"
+    infrastructure.deployment.config.revision: "Rev-1.0.0-alpha"
+    # Configuration Information
+    application.deployment.config.type: "default-behavior-config"
+    application.deployment.config.name: "agricommerce-base-behavior-config"
+    application.deployment.config.author: "Santiago Arellano"
+    application.deployment.config.revision: "Rev-1.0.0-alpha"
+  name: backend
+  namespace: networking-engineering-dockerized-nvf-project
+spec:
+  serviceName: backend
+  replicas: 1
+  selector:
+    matchLabels:
+      container.level.application.association: "agricommerce-backend"
+      container.level.application.revision: "Rev-1.0.0-component-alpha"
+  template:
+    metadata:
+      labels:
+        container.level.application.association: "agricommerce-backend"
+        container.level.application.revision: "Rev-1.0.0-component-alpha"
+    spec:
+      #? 1. Este contenedor es el backend real, en el cual vamos a simplemente 
+      #? correr la inicializacion de la imagen, para esto el comando solo  es npm
+      #? run dado que aqui ya esta todo configurado desde la imagen.
+      containers:
+        - name: backend
+          image: arellanosantiago/dockerizednfvs:test-backend-1.0.0
+          imagePullPolicy: Always
+          command: ["sh", "-c"]
+          args: ["npx prisma db push && npx prisma db seed && npm run start"]
+          ports:
+            - containerPort: 33771
+              name: puerto-backend
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "600m"
+              memory: "1.5Gi"
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "33771"
+            - name: DATABASE_URL
+              value: file:./prisma/db-data/dev.db
+            - name: JWT_SECRET
+              value: production-jwt-secret-change-this
+          volumeMounts:
+            - name: backend-database-vol
+              mountPath: /jslets/AgriCommerce/backend/prisma/db-data
+  volumeClaimTemplates:
+  - metadata:
+      name: backend-database-vol
+    spec:
+      accessModes: 
+        - ReadWriteOnce
+      # storageClassName: ss-local-storage
+      resources:
+        requests:
+          storage: "5Gi"

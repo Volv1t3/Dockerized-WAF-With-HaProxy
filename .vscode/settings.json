@@ -1,0 +1,13 @@
+{
+    "yaml.schemas": {
+        "kubernetes://schema/apps/v1@deployment": [
+            "file:///c%3A/Users/Santiago/OneDrive%20-%20Universidad%20San%20Francisco%20de%20Quito/Seventh-Semester/Networking-Engineering/ProyectoFinal_NVFConDocker/KubernetesClusterAlternative/base-config/infra-base-deploy.yaml",
+            "file:///c%3A/Users/Santiago/OneDrive%20-%20Universidad%20San%20Francisco%20de%20Quito/Seventh-Semester/Networking-Engineering/ProyectoFinal_NVFConDocker/KubernetesClusterAlternative/base-config/infra-base-hproxy-deploy.yaml"
+        ],
+        "kubernetes://schema/v1@service": "file:///c%3A/Users/Santiago/OneDrive%20-%20Universidad%20San%20Francisco%20de%20Quito/Seventh-Semester/Networking-Engineering/ProyectoFinal_NVFConDocker/KubernetesClusterAlternative/base-config/infra-base-modsec-clusterip.yaml",
+        "kubernetes://schema/apps/v1@statefulset": [
+            "file:///c%3A/Users/Santiago/OneDrive%20-%20Universidad%20San%20Francisco%20de%20Quito/Seventh-Semester/Networking-Engineering/ProyectoFinal_NVFConDocker/KubernetesClusterAlternative/base-config/infra-base-be-deploy.yaml",
+            "file:///c%3A/Users/Santiago/OneDrive%20-%20Universidad%20San%20Francisco%20de%20Quito/Seventh-Semester/Networking-Engineering/ProyectoFinal_NVFConDocker/KubernetesClusterAlternative/base-config/infra-base-modsec-deploy.yaml"
+        ]
+    }
+}

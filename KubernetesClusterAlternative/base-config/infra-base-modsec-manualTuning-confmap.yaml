@@ -1,0 +1,45 @@
+#!------------------------------------
+#? Configuracion de los ConfigMaps del ModSecurity base
+#? Santiago Arellano 00328370
+#? Estas configuraciones adicionales definen los ConfigMpas
+#? usados para cargar la informacion de los documentos requeridos 
+#? por ModSecurity
+#! -----------------------------------
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    # Infrastructure information
+    infrastructure.deployment.config.type: "base-config"
+    infrastructure.deployment.config.name: "base-config-dockerized-nfvs"
+    infrastructure.deployment.config.author: "Santiago Arellano"
+    infrastructure.deployment.config.revision: "Rev-1.0.0:alpha"
+    # Configuration Information
+    application.deployment.config.type: "default-behavior-config"
+    application.deployment.config.name: "agricommerce-base-behavior-config"
+    application.deployment.config.author: "Santiago Arellano"
+    application.deployment.config.revision: "Rev-1.0.0:alpha"
+  name:  modsecurity-configmap-manual-sqli-tuning
+  namespace: networking-engineering-dockerized-nvf-project
+data:
+  manualSQLiTuning.conf: |
+    #--------------------------------
+    #? Archivo de configuracion adicional sobre 
+    #? CORS para manejar el peso de las reglas de
+    #? SQLi en el caso de nuestro endpoint performUserRequest y performAdminRequest 
+    #? dos endpoints disenados para que el usuario pueda jugar con SQL statements
+    #? hacia la db y ver que bloquea y queno 
+
+    #? OJO el rango desde 4.200.000 hacia rriba puede ser usado para las nuevas reglas
+    #---------------------------------
+
+    SecAction \
+    "id:4200001,\
+      phase:1,\
+      log,\
+      pass,\
+      t:none,\
+      setvar:'tx.sql_injection_enable_body=1',\
+      setvar:'tx.sql_injection_max_num_args=255',\
+      setvar:'tx.sql_injection_arg_names=+command'"

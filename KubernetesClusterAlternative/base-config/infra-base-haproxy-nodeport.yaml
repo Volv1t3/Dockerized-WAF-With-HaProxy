@@ -1,0 +1,27 @@
+#!------------------------------------
+#? Configuracion de un NodePort para port forwarding desde el cluster hacia un puerto interno 443 con un puerto externo 
+#? aleatorio. 
+#? Santiago Arellano
+#? Esta es la ultima pieza del puzzle de Kubernetes, esto nos da acceso al endpoint de Kubernetes con el puerto 443 con 
+#? un mapeo del puerto expuesto por el cluster.
+#! -----------------------------------
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: haproxy
+  namespace: networking-engineering-dockerized-nvf-project
+spec:
+  type: NodePort
+  selector:
+    container.level.application.association: "agricommerce-haproxy"
+    container.level.application.revision: "Rev-1.0.0-component-alpha"
+  ports:
+    - name: https
+      port: 443
+      targetPort: 443
+      protocol: TCP
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP

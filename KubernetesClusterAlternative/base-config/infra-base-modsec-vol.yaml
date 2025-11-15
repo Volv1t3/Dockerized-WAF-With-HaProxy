@@ -1,0 +1,24 @@
+#!------------------------------------
+#? Configuracion base de un PersistentVolumeClaim para la data de los Logs de Modsecurity
+#? Santiago Arellano 00328370
+#? Esta configuracion sigue la misma forma de la configuracion para el backend.
+#? Es decir, permite la asignacion de un volumen local al cluster asociado con el que estamos trabajando 
+#? para guardar los logs.
+#! -----------------------------------
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: persistent-claim-for-modsecurity-logs
+  namespace: networking-engineering-dockerized-nvf-project
+spec:
+  resources:
+    requests:
+      storage: "10Gi"
+  volumeMode: Filesystem
+  storageClassName: local-storage
+  accessModes:
+    - ReadWriteOnce
+
+
+---

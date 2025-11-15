@@ -1,0 +1,43 @@
+#!------------------------------------
+#? Configuracion de los ConfigMaps del ModSecurity base
+#? Santiago Arellano 00328370
+#? Estas configuraciones adicionales definen los ConfigMpas
+#? usados para cargar la informacion de los documentos requeridos 
+#? por ModSecurity
+#! -----------------------------------
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    # Infrastructure information
+    infrastructure.deployment.config.type: "base-config"
+    infrastructure.deployment.config.name: "base-config-dockerized-nfvs"
+    infrastructure.deployment.config.author: "Santiago Arellano"
+    infrastructure.deployment.config.revision: "Rev-1.0.0:alpha"
+    # Configuration Information
+    application.deployment.config.type: "default-behavior-config"
+    application.deployment.config.name: "agricommerce-base-behavior-config"
+    application.deployment.config.author: "Santiago Arellano"
+    application.deployment.config.revision: "Rev-1.0.0:alpha"
+  name:  modsecurity-configmap-proxy-conf
+  namespace: networking-engineering-dockerized-nvf-project
+data:
+  proxy.conf: |
+    <VirtualHost *:8080>
+      ServerName agricommerce.evolvlabs.com
+
+      ProxyPreserveHost On
+
+      # API requests go to backend
+      ProxyPassMatch ^/api/(.*)$ http://backend:33771/api/$1
+      ProxyPassReverse ^/api/(.*)$ http://backend:33771/api/$1
+
+      # Everything else goes to frontend
+      ProxyPass        / http://frontend:34771/
+      ProxyPassReverse / http://frontend:34771/
+
+
+      ErrorLog /var/log/apache2/error.log
+      CustomLog /var/log/apache2/access.log combined
+    </VirtualHost>
