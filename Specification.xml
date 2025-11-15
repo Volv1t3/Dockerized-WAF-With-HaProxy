@@ -1,0 +1,450 @@
+<WebsiteSpecification name="AgriCommerce" version="1.0">
+  <Overview>
+    <Purpose>A simple business website with an agricultural theme, featuring public informational pages, a storefront summary, and authenticated user areas for profile and purchase history.</Purpose>
+    <Framework>SvelteKit</Framework>
+    <Reasoning>SvelteKit offers file-based routing, server endpoints, and straightforward SSR/SPA hybrid behavior, enabling simple auth and API without separate backend services.</Reasoning>
+    <Theme>
+      <Palette>
+        <Primary>#6BAF5E</Primary>
+        <PrimaryAccent>#8FD36B</PrimaryAccent>
+        <Secondary>#F4A261</Secondary>
+        <SecondaryAccent>#E76F51</SecondaryAccent>
+        <NeutralDark>#2E2A24</NeutralDark>
+        <Neutral>#E9E5DC</Neutral>
+        <NeutralLight>#F7F4EE</NeutralLight>
+      </Palette>
+      <Typography>
+        <Heading>Montserrat or Poppins</Heading>
+        <Body>Inter or Open Sans</Body>
+      </Typography>
+      <Imagery>Fields, crops, leaves, sunlit horizons, farm tools, product photography.</Imagery>
+      <Style>Modern, sleek, warm earthy tones, ample whitespace, rounded corners, soft shadows, subtle grain textures.</Style>
+    </Theme>
+    <Deployment>
+      <Containerization>Docker</Containerization>
+      <Image>Separate Docker image for the frontend application</Image>
+      <ContextRoot>frontend</ContextRoot>
+    </Deployment>
+  </Overview>
+
+  <ProjectStructure root="application-core">
+    <Folders>
+      <Folder>frontend</Folder>
+      <Folder>infra</Folder>
+      <Folder>docs</Folder>
+    </Folders>
+    <FrontendStructure base="frontend">
+      <Folder>src</Folder>
+      <Folder>static</Folder>
+      <Folder>prisma</Folder>
+      <Folder>tests</Folder>
+      <File>Dockerfile</File>
+      <File>docker-compose.yml (optional)</File>
+      <File>package.json</File>
+      <File>svelte.config.js</File>
+      <File>vite.config.ts</File>
+      <File>README.md</File>
+      <File>.env (not committed)</File>
+      <File>.env.example</File>
+      <File>.dockerignore</File>
+      <File>.gitignore</File>
+    </FrontendStructure>
+  </ProjectStructure>
+
+  <Routing framework="SvelteKit">
+    <PublicRoutes>
+      <Route path="/" name="Landing" layout="marketing" />
+      <Route path="/store" name="Storefront" layout="marketing" />
+      <Route path="/products" name="ProductSummaryList" layout="marketing" />
+      <Route path="/products/[id]" name="ProductDetail" layout="marketing" />
+      <Route path="/discounts" name="DiscountsAndOffers" layout="marketing" />
+      <Route path="/about" name="AboutUs" layout="marketing" />
+      <Route path="/history" name="History" layout="marketing" />
+      <Route path="/contact" name="Contact" layout="marketing" />
+      <Route path="/auth/sign-in" name="SignIn" layout="auth" />
+      <Route path="/auth/sign-up" name="SignUp" layout="auth" />
+    </PublicRoutes>
+    <ProtectedRoutes guard="requiresAuth">
+      <Route path="/account" name="UserAccount" layout="app" />
+      <Route path="/account/purchases" name="PurchaseHistory" layout="app" />
+    </ProtectedRoutes>
+    <ErrorRoutes>
+      <Route path="/error/403" name="Forbidden" />
+      <Route path="/error/404" name="NotFound" />
+      <Route path="/error/500" name="ServerError" />
+    </ErrorRoutes>
+  </Routing>
+
+  <Authentication>
+    <Strategy>JWT-based authentication with HttpOnly secure cookies</Strategy>
+    <Flows>
+      <SignUp>
+        <Input>email, password, name (first, last), optional phone</Input>
+        <Validation>Password min length 8, at least 1 number, 1 letter; email format</Validation>
+        <Hashing>bcrypt with 12 rounds</Hashing>
+        <Result>Create user, return JWT in HttpOnly cookie</Result>
+      </SignUp>
+      <SignIn>
+        <Input>email, password</Input>
+        <Validation>Verify credentials; on failure return 401 with generic message</Validation>
+        <Result>Set JWT in HttpOnly cookie</Result>
+      </SignIn>
+      <SignOut>
+        <Action>Clear cookie</Action>
+      </SignOut>
+      <Authorization>
+        <ProtectedPages>/account, /account/purchases</ProtectedPages>
+        <Middleware>Load user from JWT in handle hooks; redirect to /auth/sign-in if missing</Middleware>
+      </Authorization>
+    </Flows>
+    <Security>
+      <JWT>
+        <Algorithm>HS256</Algorithm>
+        <Expiry>Access: 1h</Expiry>
+        <Cookie>HttpOnly, Secure (in prod), SameSite=Lax, Path=/</Cookie>
+      </JWT>
+      <RateLimiting>Sign-in and sign-up endpoints limited by IP/user (e.g., 5/min)</RateLimiting>
+      <CSRF>Use SameSite cookies and CSRF token for destructive actions (not required for read-only)</CSRF>
+      <PasswordPolicy>As above</PasswordPolicy>
+    </Security>
+  </Authentication>
+
+  <Database>
+    <Engine>SQLite for development, PostgreSQL for production</Engine>
+    <ORM>Prisma</ORM>
+    <Schema>
+      <Model name="User">
+        <Field name="id" type="string" pk="true" default="cuid()" />
+        <Field name="email" type="string" unique="true" />
+        <Field name="passwordHash" type="string" />
+        <Field name="firstName" type="string" />
+        <Field name="lastName" type="string" />
+        <Field name="phone" type="string" optional="true" />
+        <Field name="createdAt" type="DateTime" default="now()" />
+        <Field name="updatedAt" type="DateTime" updatedAt="true" />
+        <Relation name="purchases" model="Purchase" type="hasMany" />
+      </Model>
+      <Model name="Product">
+        <Field name="id" type="string" pk="true" default="cuid()" />
+        <Field name="name" type="string" />
+        <Field name="slug" type="string" unique="true" />
+        <Field name="summary" type="string" />
+        <Field name="description" type="string" />
+        <Field name="priceCents" type="int" />
+        <Field name="imageUrl" type="string" optional="true" />
+        <Field name="createdAt" type="DateTime" default="now()" />
+        <Field name="updatedAt" type="DateTime" updatedAt="true" />
+      </Model>
+      <Model name="Purchase">
+        <Field name="id" type="string" pk="true" default="cuid()" />
+        <Field name="userId" type="string" />
+        <Field name="totalCents" type="int" />
+        <Field name="createdAt" type="DateTime" default="now()" />
+        <Relation name="user" model="User" type="belongsTo" fields="userId" references="id" />
+        <Relation name="items" model="PurchaseItem" type="hasMany" />
+      </Model>
+      <Model name="PurchaseItem">
+        <Field name="id" type="string" pk="true" default="cuid()" />
+        <Field name="purchaseId" type="string" />
+        <Field name="productId" type="string" />
+        <Field name="quantity" type="int" default="1" />
+        <Field name="priceCentsAtPurchase" type="int" />
+        <Relation name="purchase" model="Purchase" type="belongsTo" fields="purchaseId" references="id" />
+        <Relation name="product" model="Product" type="belongsTo" fields="productId" references="id" />
+      </Model>
+      <Model name="Discount">
+        <Field name="id" type="string" pk="true" default="cuid()" />
+        <Field name="title" type="string" />
+        <Field name="description" type="string" />
+        <Field name="percentOff" type="int" />
+        <Field name="active" type="boolean" default="true" />
+        <Field name="startsAt" type="DateTime" />
+        <Field name="endsAt" type="DateTime" />
+      </Model>
+    </Schema>
+    <Indexes>
+      <Index model="Product" fields="slug" unique="true" />
+      <Index model="User" fields="email" unique="true" />
+    </Indexes>
+  </Database>
+
+  <APIs>
+    <Conventions>
+      <Base>/api</Base>
+      <Format>JSON</Format>
+      <Errors>Use consistent error object: {"error":{"code":"string","message":"string"}}</Errors>
+    </Conventions>
+    <Endpoints>
+      <Endpoint method="POST" path="/api/auth/sign-up" auth="none">
+        <Body>{"email":"string","password":"string","firstName":"string","lastName":"string","phone?":"string"}</Body>
+        <Response201>{"user":{"id":"string","email":"string"},"message":"Signed up"}</Response201>
+        <SideEffects>Sets HttpOnly JWT cookie</SideEffects>
+      </Endpoint>
+      <Endpoint method="POST" path="/api/auth/sign-in" auth="none">
+        <Body>{"email":"string","password":"string"}</Body>
+        <Response200>{"user":{"id":"string","email":"string"},"message":"Signed in"}</Response200>
+        <SideEffects>Sets HttpOnly JWT cookie</SideEffects>
+      </Endpoint>
+      <Endpoint method="POST" path="/api/auth/sign-out" auth="required">
+        <Response200>{"message":"Signed out"}</Response200>
+        <SideEffects>Clears JWT cookie</SideEffects>
+      </Endpoint>
+      <Endpoint method="GET" path="/api/me" auth="required">
+        <Response200>{"id":"string","email":"string","firstName":"string","lastName":"string","phone?":"string"}</Response200>
+      </Endpoint>
+      <Endpoint method="GET" path="/api/purchases" auth="required">
+        <Response200>[{"id":"string","totalCents":1234,"createdAt":"ISO","items":[...]}, ...]</Response200>
+      </Endpoint>
+      <Endpoint method="GET" path="/api/products" auth="none">
+        <Query>pagination: page, pageSize; search: q</Query>
+        <Response200>[{"id":"string","name":"string","slug":"string","priceCents":1234,"imageUrl":"string"}]</Response200>
+      </Endpoint>
+      <Endpoint method="GET" path="/api/products/[id]" auth="none">
+        <Response200>{"id":"string","name":"string","summary":"string","description":"string","priceCents":1234,"imageUrl":"string"}</Response200>
+      </Endpoint>
+      <Endpoint method="GET" path="/api/discounts" auth="none">
+        <Response200>[{"id":"string","title":"string","percentOff":10,"active":true,"startsAt":"ISO","endsAt":"ISO"}]</Response200>
+      </Endpoint>
+      <Endpoint method="POST" path="/api/contact" auth="none">
+        <Body>{"name":"string","email":"string","message":"string"}</Body>
+        <Response202>{"message":"Received"}</Response202>
+        <SideEffects>Email or store message (stub for MVP)</SideEffects>
+      </Endpoint>
+    </Endpoints>
+  </APIs>
+
+  <Pages>
+    <Public>
+      <Landing>
+        <Hero>Large image of farmland, bold headline, CTA buttons (Shop, Learn More)</Hero>
+        <Highlights>3-4 cards: Products, Sustainable Practices, Seasonal Offers</Highlights>
+        <CTA>Newsletter signup form (email only)</CTA>
+        <Footer>Links to About, History, Contact, Socials</Footer>
+      </Landing>
+      <Storefront>Grid of product cards with image, name, short summary, price, link to detail</Storefront>
+      <ProductSummary>List page; product detail page includes description, price, related products</ProductSummary>
+      <Discounts>List active offers with validity dates</Discounts>
+      <About>Mission, values, team photos</About>
+      <History>Timeline of the business with imagery</History>
+      <Contact>Contact form (name, email, message) and address/map placeholder</Contact>
+      <Auth>
+        <SignIn>Form with email, password, link to Sign Up, password visibility toggle</SignIn>
+        <SignUp>Form with email, password, confirm password, first/last name, optional phone</SignUp>
+      </Auth>
+    </Public>
+    <Protected>
+      <Account>Profile view and edit basics (except email), show masked email, created date</Account>
+      <PurchaseHistory>List prior purchases, totals, dates, items; pagination</PurchaseHistory>
+    </Protected>
+  </Pages>
+
+  <MiddlewareAndGuards>
+    <Hook handle="src/hooks.server.ts">
+      <Responsibilities>
+        <Item>Parse JWT from HttpOnly cookie</Item>
+        <Item>Attach user to locals if valid</Item>
+        <Item>Set secure cookie flags based on environment</Item>
+      </Responsibilities>
+    </Hook>
+    <Guard type="load" where="+protected routes">
+      <Behavior>Redirect to /auth/sign-in if no user in locals</Behavior>
+    </Guard>
+  </MiddlewareAndGuards>
+
+  <Security>
+    <Headers>
+      <CSP>Default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; connect-src 'self'</CSP>
+      <XFrameOptions>SAMEORIGIN</XFrameOptions>
+      <XContentTypeOptions>nosniff</XContentTypeOptions>
+      <ReferrerPolicy>no-referrer-when-downgrade</ReferrerPolicy>
+      <PermissionsPolicy>geolocation=(), microphone=(), camera=()</PermissionsPolicy>
+    </Headers>
+    <Secrets>
+      <JWTSecret>JWT_SECRET in .env</JWTSecret>
+      <DatabaseURL>DATABASE_URL in .env</DatabaseURL>
+    </Secrets>
+    <Validation>
+      <Library>Zod for input validation</Library>
+      <Sanitization>Escape user-provided content in UI</Sanitization>
+    </Validation>
+    <AuthCookie>
+      <Name>agri_auth</Name>
+      <Secure>true in production</Secure>
+      <HttpOnly>true</HttpOnly>
+      <SameSite>Lax</SameSite>
+      <Path>/</Path>
+    </AuthCookie>
+  </Security>
+
+  <Docker>
+    <Dockerfile path="frontend/Dockerfile">
+      <Base>node:20-alpine</Base>
+      <Stages>
+        <Stage name="builder">
+          <Commands>
+            <Command>apk add --no-cache openssl</Command>
+            <Command>WORKDIR /app</Command>
+            <Command>COPY package*.json ./</Command>
+            <Command>RUN npm ci</Command>
+            <Command>COPY . .</Command>
+            <Command>RUN npx prisma generate</Command>
+            <Command>RUN npm run build</Command>
+          </Commands>
+        </Stage>
+        <Stage name="runner">
+          <Commands>
+            <Command>WORKDIR /app</Command>
+            <Command>COPY --from=builder /app/build ./build</Command>
+            <Command>COPY --from=builder /app/package*.json ./</Command>
+            <Command>COPY --from=builder /app/prisma ./prisma</Command>
+            <Command>RUN npm ci --omit=dev</Command>
+            <Command>ENV PORT=3000</Command>
+            <Command>EXPOSE 3000</Command>
+            <Command>CMD ["node","build/index.js"]</Command>
+          </Commands>
+        </Stage>
+      </Stages>
+    </Dockerfile>
+    <Compose optional="true">
+      <Services>
+        <Service name="frontend">
+          <Build>./frontend</Build>
+          <Ports>3000:3000</Ports>
+          <Env>.env</Env>
+          <DependsOn optional="db">db</DependsOn>
+        </Service>
+        <Service name="db" optional="true">
+          <Image>postgres:16-alpine</Image>
+          <Env>
+            <Var>POSTGRES_PASSWORD=postgres</Var>
+            <Var>POSTGRES_USER=postgres</Var>
+            <Var>POSTGRES_DB=agri</Var>
+          </Env>
+          <Ports>5432:5432</Ports>
+          <Volumes>dbdata:/var/lib/postgresql/data</Volumes>
+        </Service>
+      </Services>
+      <Volumes>
+        <Volume>dbdata</Volume>
+      </Volumes>
+    </Compose>
+  </Docker>
+
+  <Environments>
+    <Env name="development">
+      <Database>SQLite (file: ./prisma/dev.db)</Database>
+      <CookieSecure>false</CookieSecure>
+      <Logging>Verbose</Logging>
+      <CORS>self</CORS>
+    </Env>
+    <Env name="production">
+      <Database>PostgreSQL (DATABASE_URL)</Database>
+      <CookieSecure>true</CookieSecure>
+      <Logging>Info</Logging>
+      <CORS>self</CORS>
+    </Env>
+  </Environments>
+
+  <Testing>
+    <Unit>Vitest for utilities and API handlers</Unit>
+    <Integration>Playwright for routes and auth flow</Integration>
+    <Security>Basic rate-limit tests, JWT expiry tests</Security>
+    <Data>Seed script for products and discounts</Data>
+  </Testing>
+
+  <Accessibility>
+    <Standards>WCAG 2.1 AA</Standards>
+    <Practices>
+      <Item>Semantic HTML (header, nav, main, footer)</Item>
+      <Item>Alt text for images</Item>
+      <Item>Focusable and keyboard navigable components</Item>
+      <Item>Color contrast checked for earthy tones</Item>
+    </Practices>
+  </Accessibility>
+
+  <Performance>
+    <Optimizations>
+      <Item>Image compression and responsive sizes</Item>
+      <Item>Code splitting via SvelteKit</Item>
+      <Item>Caching static assets</Item>
+    </Optimizations>
+  </Performance>
+
+  <CommentingStandards>
+    <Requirement>Every file, function, and configuration must include comments describing purpose, inputs/outputs, side effects, and examples when relevant.</Requirement>
+    <Format>
+      <HeaderComments>Top-of-file block comment explaining role and dependencies</HeaderComments>
+      <FunctionComments>JSDoc-style: @param, @returns, @throws</FunctionComments>
+      <ConfigComments>Inline comments for env vars, ports, secrets, and rationale</ConfigComments>
+    </Format>
+  </CommentingStandards>
+
+  <ImplementationNotes>
+    <SvelteKit>
+      <Files>
+        <File path="src/hooks.server.ts">Parse JWT from cookie, set locals.user, secure flags</File>
+        <File path="src/lib/server/db.ts">Prisma client setup, singleton pattern, commented</File>
+        <File path="src/lib/server/jwt.ts">Sign/verify tokens, expiration handling, commented</File>
+        <File path="src/lib/validators.ts">Zod schemas for inputs</File>
+        <File path="src/routes/+layout.svelte">Global layout with theme variables</File>
+        <File path="src/routes/+page.svelte">Landing page</File>
+        <File path="src/routes/store/+page.svelte">Storefront</File>
+        <File path="src/routes/products/+page.svelte">Products list</File>
+        <File path="src/routes/products/[id]/+page.svelte">Product detail</File>
+        <File path="src/routes/discounts/+page.svelte">Discounts</File>
+        <File path="src/routes/about/+page.svelte">About</File>
+        <File path="src/routes/history/+page.svelte">History</File>
+        <File path="src/routes/contact/+page.svelte">Contact form</File>
+        <File path="src/routes/auth/sign-in/+page.svelte">Sign-in form</File>
+        <File path="src/routes/auth/sign-up/+page.svelte">Sign-up form</File>
+        <File path="src/routes/account/+layout.server.ts">Guard: redirect if not authenticated</File>
+        <File path="src/routes/account/+page.svelte">Account overview</File>
+        <File path="src/routes/account/purchases/+page.svelte">Purchase history</File>
+        <File path="src/routes/api/auth/sign-in/+server.ts">POST handler</File>
+        <File path="src/routes/api/auth/sign-up/+server.ts">POST handler</File>
+        <File path="src/routes/api/auth/sign-out/+server.ts">POST handler</File>
+        <File path="src/routes/api/me/+server.ts">GET handler</File>
+        <File path="src/routes/api/purchases/+server.ts">GET handler</File>
+        <File path="src/routes/api/products/+server.ts">GET handler</File>
+        <File path="src/routes/api/products/[id]/+server.ts">GET handler</File>
+        <File path="src/routes/api/discounts/+server.ts">GET handler</File>
+        <File path="src/routes/api/contact/+server.ts">POST handler</File>
+        <File path="static/favicon.svg">Brand icon</File>
+        <File path="src/app.css">Design tokens, CSS variables, comments</File>
+      </Files>
+    </SvelteKit>
+  </ImplementationNotes>
+
+  <ReadmeOutline>
+    <Sections>
+      <Section>Project Overview</Section>
+      <Section>Architecture</Section>
+      <Section>Setup and Installation</Section>
+      <Section>Environment Variables</Section>
+      <Section>Running Locally (with Docker and without)</Section>
+      <Section>Database Migrations and Seeding</Section>
+      <Section>Testing</Section>
+      <Section>Deployment Notes</Section>
+      <Section>Security Considerations</Section>
+      <Section>Commenting Guidelines</Section>
+    </Sections>
+  </ReadmeOutline>
+
+  <EnvVariables>
+    <Variable name="DATABASE_URL" required="true" description="Prisma connection string (SQLite or Postgres)" />
+    <Variable name="JWT_SECRET" required="true" description="Secret for signing JWTs" />
+    <Variable name="PORT" required="false" default="3000" />
+    <Variable name="NODE_ENV" required="false" default="development" />
+  </EnvVariables>
+
+  <AcceptanceCriteria>
+    <Item>Sign up and sign in produce and store HttpOnly JWT cookie</Item>
+    <Item>Protected routes redirect unauthenticated users to sign-in</Item>
+    <Item>Account page displays user profile data</Item>
+    <Item>Purchase history lists seeded purchases</Item>
+    <Item>Public pages are reachable without auth</Item>
+    <Item>Docker image builds and runs the site on port 3000</Item>
+    <Item>All files, functions, and configs contain comprehensive comments</Item>
+    <Item>Color palette and theme match agricultural, warm, modern design</Item>
+  </AcceptanceCriteria>
+</WebsiteSpecification>

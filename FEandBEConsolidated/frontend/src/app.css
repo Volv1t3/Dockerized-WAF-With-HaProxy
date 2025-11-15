@@ -1,0 +1,335 @@
+/**
+ * AgriCommerce Global Styles
+ * 
+ * Defines the agricultural theme with warm, earthy colors and modern typography.
+ * Includes CSS custom properties, base styles, and utility classes.
+ */
+
+/* Import modern fonts from system or web fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+/**
+ * CSS Custom Properties (Design Tokens)
+ * Agricultural color palette with warm, earthy tones
+ */
+:root {
+	/* Primary Colors - Green tones representing agriculture */
+	--color-primary: #6BAF5E;
+	--color-primary-accent: #8FD36B;
+	--color-primary-dark: #5A9B4D;
+	--color-primary-light: #A4E091;
+
+	/* Secondary Colors - Warm accent tones */
+	--color-secondary: #F4A261;
+	--color-secondary-accent: #E76F51;
+	--color-secondary-dark: #E09142;
+	--color-secondary-light: #F7B885;
+
+	/* Neutral Colors - Earth tones */
+	--color-neutral-dark: #2E2A24;
+	--color-neutral: #E9E5DC;
+	--color-neutral-light: #F7F4EE;
+	--color-neutral-white: #FFFFFF;
+
+	/* Semantic Colors */
+	--color-success: var(--color-primary);
+	--color-warning: var(--color-secondary);
+	--color-error: #DC2626;
+	--color-info: #3B82F6;
+
+	/* Typography */
+	--font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+	--font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+	/* Font Sizes */
+	--text-xs: 0.75rem;
+	--text-sm: 0.875rem;
+	--text-base: 1rem;
+	--text-lg: 1.125rem;
+	--text-xl: 1.25rem;
+	--text-2xl: 1.5rem;
+	--text-3xl: 1.875rem;
+	--text-4xl: 2.25rem;
+
+	/* Spacing Scale */
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.25rem;
+	--space-6: 1.5rem;
+	--space-8: 2rem;
+	--space-10: 2.5rem;
+	--space-12: 3rem;
+	--space-16: 4rem;
+	--space-20: 5rem;
+
+	/* Border Radius */
+	--radius-sm: 0.25rem;
+	--radius-md: 0.5rem;
+	--radius-lg: 0.75rem;
+	--radius-xl: 1rem;
+
+	/* Shadows */
+	--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+	/* Transitions */
+	--transition-fast: 150ms ease-in-out;
+	--transition-normal: 250ms ease-in-out;
+	--transition-slow: 350ms ease-in-out;
+
+	/* Layout */
+	--max-width-container: 1200px;
+	--max-width-content: 800px;
+}
+
+/**
+ * CSS Reset and Base Styles
+ */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html {
+	font-family: var(--font-body);
+	line-height: 1.6;
+	color: var(--color-neutral-dark);
+	background-color: var(--color-neutral-light);
+	scroll-behavior: smooth;
+}
+
+body {
+	min-height: 100vh;
+	font-size: var(--text-base);
+	font-weight: 400;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/**
+ * Typography Styles
+ */
+h1, h2, h3, h4, h5, h6 {
+	font-family: var(--font-heading);
+	font-weight: 600;
+	line-height: 1.2;
+	color: var(--color-neutral-dark);
+	margin-bottom: var(--space-4);
+}
+
+h1 { font-size: var(--text-4xl); }
+h2 { font-size: var(--text-3xl); }
+h3 { font-size: var(--text-2xl); }
+h4 { font-size: var(--text-xl); }
+h5 { font-size: var(--text-lg); }
+h6 { font-size: var(--text-base); }
+
+p {
+	margin-bottom: var(--space-4);
+	line-height: 1.7;
+}
+
+a {
+	color: var(--color-primary);
+	text-decoration: none;
+	transition: color var(--transition-fast);
+}
+
+a:hover {
+	color: var(--color-primary-dark);
+	text-decoration: underline;
+}
+
+/**
+ * Form Elements
+ */
+input, textarea, select {
+	font-family: inherit;
+	font-size: var(--text-base);
+	padding: var(--space-3) var(--space-4);
+	border: 2px solid var(--color-neutral);
+	border-radius: var(--radius-md);
+	background-color: var(--color-neutral-white);
+	transition: border-color var(--transition-fast);
+	width: 100%;
+}
+
+input:focus, textarea:focus, select:focus {
+	outline: none;
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 3px rgba(107, 175, 94, 0.1);
+}
+
+label {
+	display: block;
+	font-weight: 500;
+	margin-bottom: var(--space-2);
+	color: var(--color-neutral-dark);
+}
+
+/**
+ * Button Styles
+ */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--space-3) var(--space-6);
+	font-family: var(--font-heading);
+	font-size: var(--text-base);
+	font-weight: 500;
+	text-decoration: none;
+	border: none;
+	border-radius: var(--radius-md);
+	cursor: pointer;
+	transition: all var(--transition-fast);
+	gap: var(--space-2);
+}
+
+.btn-primary {
+	background-color: var(--color-primary);
+	color: var(--color-neutral-white);
+}
+
+.btn-primary:hover {
+	background-color: var(--color-primary-dark);
+	transform: translateY(-1px);
+	color: var(--color-neutral);
+	box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+	background-color: var(--color-secondary);
+	color: var(--color-neutral-white);
+}
+
+.btn-secondary:hover {
+	background-color: var(--color-secondary-dark);
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-md);
+}
+
+.btn-outline {
+	background-color: transparent;
+	color: var(--color-primary);
+	border: 2px solid var(--color-primary);
+}
+
+.btn-outline:hover {
+	background-color: var(--color-primary);
+	color: var(--color-neutral-white);
+}
+
+/**
+ * Card Component
+ */
+.card {
+	background-color: var(--color-neutral-white);
+	border-radius: var(--radius-lg);
+	padding: var(--space-6);
+	box-shadow: var(--shadow-sm);
+	transition: box-shadow var(--transition-normal);
+}
+
+.card:hover {
+	box-shadow: var(--shadow-md);
+}
+
+/**
+ * Layout Utilities
+ */
+.container {
+	max-width: var(--max-width-container);
+	margin: 0 auto;
+	padding: 0 var(--space-4);
+}
+
+.content {
+	max-width: var(--max-width-content);
+	margin: 0 auto;
+}
+
+.grid {
+	display: grid;
+	gap: var(--space-6);
+}
+
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+.flex {
+	display: flex;
+	gap: var(--space-4);
+}
+
+.flex-center {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.flex-between {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+/**
+ * Spacing Utilities
+ */
+.mt-4 { margin-top: var(--space-4); }
+.mb-4 { margin-bottom: var(--space-4); }
+.py-8 { padding: var(--space-8) 0; }
+.px-4 { padding: 0 var(--space-4); }
+
+/**
+ * Text Utilities
+ */
+.text-center { text-align: center; }
+.text-primary { color: var(--color-primary); }
+.text-secondary { color: var(--color-secondary); }
+.text-muted { color: #6B7280; }
+
+/**
+ * Responsive Design
+ */
+@media (max-width: 768px) {
+	.grid-2, .grid-3, .grid-4 {
+		grid-template-columns: 1fr;
+	}
+	
+	.container {
+		padding: 0 var(--space-3);
+	}
+	
+	h1 { font-size: var(--text-3xl); }
+	h2 { font-size: var(--text-2xl); }
+}
+
+/**
+ * Accessibility Improvements
+ */
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+/* Focus styles for keyboard navigation */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+	outline: 2px solid var(--color-primary);
+	outline-offset: 2px;
+}

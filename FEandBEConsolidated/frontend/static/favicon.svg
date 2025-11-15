@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- AgriCommerce Favicon - Agricultural Theme -->
+  <defs>
+    <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8FD36B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6BAF5E;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="50" cy="50" r="45" fill="#F7F4EE" stroke="#6BAF5E" stroke-width="2"/>
+  
+  <!-- Wheat/Grain Symbol -->
+  <g transform="translate(50,50)">
+    <!-- Stem -->
+    <line x1="0" y1="15" x2="0" y2="-20" stroke="#6BAF5E" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Grain heads -->
+    <ellipse cx="-3" cy="-15" rx="2" ry="4" fill="url(#leafGradient)" transform="rotate(-15)"/>
+    <ellipse cx="3" cy="-15" rx="2" ry="4" fill="url(#leafGradient)" transform="rotate(15)"/>
+    <ellipse cx="-2" cy="-8" rx="1.5" ry="3" fill="url(#leafGradient)" transform="rotate(-10)"/>
+    <ellipse cx="2" cy="-8" rx="1.5" ry="3" fill="url(#leafGradient)" transform="rotate(10)"/>
+    <ellipse cx="0" cy="-20" rx="2" ry="4" fill="url(#leafGradient)"/>
+    
+    <!-- Small leaves -->
+    <path d="M -8,-5 Q -12,-8 -8,-12 Q -4,-8 -8,-5" fill="#8FD36B"/>
+    <path d="M 8,-5 Q 12,-8 8,-12 Q 4,-8 8,-5" fill="#8FD36B"/>
+  </g>
+</svg>

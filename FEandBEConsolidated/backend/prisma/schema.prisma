@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  purchases Purchase[]
+  @@map("users")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  summary     String
+  description String
+  priceCents  Int
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  purchaseItems PurchaseItem[]
+  @@map("products")
+}
+
+model Purchase {
+  id         String   @id @default(cuid())
+  userId     String
+  totalCents Int
+  createdAt  DateTime @default(now())
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items PurchaseItem[]
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id                   String @id @default(cuid())
+  purchaseId           String
+  productId            String
+  quantity             Int    @default(1)
+  priceCentsAtPurchase Int
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id])
+  @@map("purchase_items")
+}
+
+model Discount {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  percentOff  Int
+  active      Boolean  @default(true)
+  startsAt    DateTime
+  endsAt      DateTime
+  @@map("discounts")
+}

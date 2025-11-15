@@ -1,0 +1,94 @@
+services:
+  backend:
+    build: ./FEandBEConsolidated/backend
+    container_name: backend
+    ports:
+      - "33771:33771"
+    networks:
+      - svc_net
+    environment:
+      - NODE_ENV=production
+      - PORT=33771
+      - DATABASE_URL=file:./prisma/dev.db
+      - JWT_SECRET=production-jwt-secret-change-this
+    volumes:
+      - backend_database_vol:/jslets/AgriCommerce/backend/prisma
+    user: "0:0"
+    # Esta linea es la salvacion de la base de datos, la base de datos no funciona si no se usa esto porque
+    # el guardar los datos en un volumen elimina los permisos del directorio del contenedor con los de la imagen
+    # lo que resulta en que tengamos una read only database. Este comando se ejecuta luego de la 
+    command: sh -c "
+      npx prisma db push &&
+      npx prisma db seed &&
+      npm run start"
+
+
+
+  frontend:
+    build: ./FEandBEConsolidated/frontend
+    container_name: frontend
+    depends_on:
+      - backend
+    ports:
+      - "34771:34771"
+    networks:
+      - svc_net
+    environment:
+      - BACKEND_URL=http://backend:33771
+
+  haproxy:
+    image: haproxy:2.9
+    container_name: haproxy
+    depends_on:
+      - frontend
+    ports:
+      - "8080:8080"
+      - "443:443"
+    volumes:
+      - ./BaseConfigComposeAlternative/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+      - ./BaseConfigComposeAlternative/logs/haproxy:/var/log/haproxy
+      - ./BaseConfigComposeAlternative/certificates:/etc/haproxy
+    networks:
+      - svc_net
+
+  modsecurity:
+    image: owasp/modsecurity-crs:apache
+    container_name: modsecurity
+    depends_on:
+      - haproxy
+    environment:
+      - MODSEC_STATUS_ENGINE=On
+      - MODSEC_RULE_ENGINE=On
+      - PARANOIA_LEVEL=4
+      - BACKEND=http://backend:33771
+      - PORT=8080
+    volumes:
+      - ./BaseConfigComposeAlternative/modsecurity/modsecurity.conf:/etc/modsecurity.d/modsecurity.conf
+      - ./BaseConfigComposeAlternative/modsecurity/apache/proxy.conf:/usr/local/apache2/conf/extra/httpd-vhosts.conf
+      - ./BaseConfigComposeAlternative/modsecurity/apache/httpd.conf:/usr/local/apache2/conf/httpd.conf
+      - ./BaseConfigComposeAlternative/modsecurity/crs/manualSQLiTuning.conf:/usr/local/apache2/conf/manualSQLiTuning.conf:ro
+      - ./BaseConfigComposeAlternative/modsecurity/crs-setup.conf:/etc/modsecurity.d/crs-setup.conf
+      - ./BaseConfigComposeAlternative/modsecurity/rules:/etc/modsecurity.d/rules
+      - ./BaseConfigComposeAlternative/logs/modsecurity:/var/log/apache2
+    ports:
+      - "8080"
+      - "8081:8080"
+    networks:
+      - svc_net
+
+
+  test_ubuntu:
+    image: ubuntu:latest
+    container_name: test_ubuntu
+    command: tail -f /dev/null
+    networks:
+      - svc_net
+
+
+networks:
+  svc_net:
+    driver: bridge
+
+volumes:
+  backend_database_vol:
+    driver: local

@@ -1,0 +1,62 @@
+# AgriCommerce Docker Compose Configuration
+# Defines services for frontend application and optional PostgreSQL database
+
+version: '3.8'
+
+services:
+  # Frontend Application Service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # Database connection - uses PostgreSQL in production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/agri
+      # JWT secret - should be overridden with secure value
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - agri-network
+    # Mount volume for persistent data if needed
+    volumes:
+      - ./logs:/app/logs
+
+  # PostgreSQL Database Service (Optional - can use external database)
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=agri
+    ports:
+      - "5432:5432"
+    volumes:
+      # Persistent database storage
+      - dbdata:/var/lib/postgresql/data
+      # Optional: Custom initialization scripts
+      # - ./init-scripts:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    networks:
+      - agri-network
+    # Health check for database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# Named volumes for persistent data
+volumes:
+  dbdata:
+    driver: local
+
+# Custom network for service communication
+networks:
+  agri-network:
+    driver: bridge
