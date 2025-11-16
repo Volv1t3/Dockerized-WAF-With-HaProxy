@@ -57,12 +57,12 @@ data:
     # Default action: log and deny on matched rules
     # (If using CRS anomaly scoring, CRS itself handles denial)
     # Default action: log and deny on matched rules
-    SecDefaultAction "phase:1,log,auditlog,pass"
-    SecDefaultAction "phase:2,log,auditlog,pass"
-    SecDefaultAction "phase:3,log,auditlog,pass"
-    SecDefaultAction "phase:4,log,auditlog,pass"
-    SecDefaultAction "phase:5,log,auditlog,pass"
-    SecDefaultAction "phase:6,log,auditlog,pass"
+    SecDefaultAction "phase:2,log,auditlog,deny"
+    SecDefaultAction "phase:1,log,auditlog,deny"
+    SecDefaultAction "phase:3,log,auditlog,deny"
+    SecDefaultAction "phase:4,log,auditlog,deny"
+    SecDefaultAction "phase:5,log,auditlog,deny"
+    SecDefaultAction "phase:6,log,auditlog,deny"
 
 
     # Request body access (needed for POST inspection)

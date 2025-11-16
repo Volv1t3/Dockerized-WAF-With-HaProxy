@@ -1,0 +1,107 @@
+#!------------------------------------
+#? Configuracion de los ConfigMaps del ModSecurity base
+#? Santiago Arellano 00328370
+#? Estas configuraciones adicionales definen los ConfigMpas
+#? usados para cargar la informacion de los documentos requeridos 
+#? por ModSecurity
+#! -----------------------------------
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    # Infrastructure information
+    infrastructure.deployment.config.type: "base-config"
+    infrastructure.deployment.config.name: "base-config-dockerized-nfvs"
+    infrastructure.deployment.config.author: "Santiago Arellano"
+    infrastructure.deployment.config.revision: "Rev-1.0.0:alpha"
+    # Configuration Information
+    application.deployment.config.type: "default-behavior-config"
+    application.deployment.config.name: "agricommerce-base-behavior-config"
+    application.deployment.config.author: "Santiago Arellano"
+    application.deployment.config.revision: "Rev-1.0.0:alpha"
+  name:  modsecurity-configmap-rules
+  namespace: networking-engineering-dockerized-nvf-project
+data:
+  custom.conf: |
+    # This file is for custom rules.
+    # Detect SQL Injection using libinjection in JSON request bodies
+    SecRule REQUEST_HEADERS:Content-Type "@contains application/json" \
+      "id:999001,\
+      phase:2,\
+      t:none,t:lowercase,\
+      log,auditlog,deny,\
+      msg:'SQL Injection Attack in JSON body (libinjection)',\
+      chain"
+
+      SecRule REQUEST_BODY "@detectSQLi" "t:none"
+
+    # Detect SQLi-like patterns in JSON body for the vulnerable endpoint
+    SecRule REQUEST_URI "@beginsWith /api/vulnerable/performUserRequest" \
+        "id:100010,\
+        phase:2,\
+        t:none,t:lowercase,t:urlDecodeUni,\
+        pass,\
+        log,\
+        msg:'JSON SQLi-like pattern in command field for vulnerable endpoint',\
+        setvar:'tx.anomaly_score_pl1=+5',\
+        setvar:'tx.sql_json_detected=1',\
+        chain"
+
+        SecRule REQUEST_HEADERS:Content-Type "@contains application/json" \
+            "t:none,t:lowercase,\
+            chain"
+
+            SecRule REQUEST_BODY:command "@rx (\bselect\b|\bunion\b|\bor\b\s+1\s*=\s*1\b|\bdrop\s+table\b)" \
+                "t:none,t:lowercase,t:urlDecodeUni"
+    # Las reglas anteriores configuran la base de las reglas manuales que creamos en la configuracion base. 
+    # Las reglas debajo de esto bloquean el acceso a diferentes areas de la aplicacion para simular un deny all 
+    # scenario
+    # Comentario linea 37 [No se puede poner inline]: En este caso vamos a bloquear el acceso a la ruta de performUserRequest completamente
+    # Comentario Linea 44 Esta regla realiza lo mismo para bloquear el acceso a la ruta de performAdminRequest
+    # La idea es que esta regla bloquea de igual manera el acceso a la aplicacion.
+    # En este caso vamos a bloquear el acceso a la ruta de performAdminRequest completamente
+    # Definimos Phase 1 porque analizamos el request header
+
+    SecRule REQUEST_URI "@contains /api/vulnerable/performUserRequest"  \
+      "id:999002,\
+      phase:1,\
+      deny,\
+      msg:'El accesso a la API por esta ruta esta negado',\
+      logdata:'Se ha encontrdo una siimlltud con la regla %{MATCHED_VAR} dentro de una request hacia la api vulnerable'"
+    # Definimos Phase 1 porque analizamos el request header
+    SecRule REQUEST_URI "@contains /api/vulnerable/performAdminRequest"  \
+      "id:999003,\
+      phase:1,\
+      deny,\
+      msg:'El accesso a la API performAdminRequest por esta ruta esta negado',\
+      logdata:'Se ha encontrdo una siimlltud con la regla %{MATCHED_VAR} dentro de una request hacia la api vulnerable'"
+    
+    # Ahora creemos dos reglas que no permitan el acceso a la ruta de logeo si se hace un paso por la ruta de users
+    # acceso previo a la ruta de /users
+
+    # Aqui definimos el mensaje y un aspcto interesante, podemos asignar una variable a una
+    # ip externa, y seguir esta variable con la request quye tenemos mientras se mantenga esta 
+    # ip. En este caso estamos asignando una variable que indica si se ha accedido a la ruta de users
+    # Esto le dice que luego de tres minutos se elimine la variable para que el usuario
+    # pueda entrar a las rutas normales de logeo
+    # Flag IPs that visit /users
+    SecRule REQUEST_URI "@contains /users" \
+      "id:999004,\
+      phase:1,\
+      deny,\
+      msg:'Access to users page detected via Referer - Denying all access to other routes)',\
+      setvar:'ip.USERS_ACCESSED_USER_ROUTE=1',\
+      expirevar:'ip.USERS_ACCESSED_USER_ROUTE=300',\
+      log,\
+      logdata:'DEBUG 999004 fired based on Referer %{MATCHED_VAR} from IP %{REMOTE_ADDR}'"
+
+    # Denegamos el accesso a otras requests desde la pagina de admin completamente
+    SecRule REQUEST_URI "@contains /admin" \
+      "id:999005,\
+      phase:1,\
+      deny,\
+      msg:'Access to admin page detected via Referer - Denying all access to other routes)',\
+      log,\
+      logdata:'DEBUG 999005 fired based on Referer %{MATCHED_VAR} from IP %{REMOTE_ADDR}'"
+                  
